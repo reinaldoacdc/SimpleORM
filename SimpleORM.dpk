@@ -43,9 +43,12 @@ requires
   DbxCommonDriver,
   bindengine,
   bindcomp,
-  RESTComponents,
-  dac260,
-  unidac260;
+  RESTComponents
+  {$IFDEF  MYDAC_VER_500}
+  , dac260
+  , unidac260
+  {$ENDIF}
+  ;
 
 contains
   SimpleAttributes in 'SimpleAttributes.pas',
@@ -61,7 +64,11 @@ contains
   SimpleUtil in 'SimpleUtil.pas',
   SimpleEntity in 'SimpleEntity.pas',
   SimpleJSONUtil in 'SimpleJSONUtil.pas',
-  SimpleJSON in 'SimpleJSON.pas',
-  SimpleQueryUnidac in 'SimpleQueryUnidac.pas';
+  SimpleJSON in 'SimpleJSON.pas'
+  {$IFDEF  MYDAC_VER_500}
+  , SimpleQueryUnidac in 'SimpleQueryUnidac.pas'
+  {$ENDIF}
+
+  ;
 
 end.
