@@ -89,9 +89,8 @@ uses
   Data.DB,
   TypInfo,
   {$IFNDEF CONSOLE}
-    FMX.Types,
     {$IFDEF FMX}
-      FMX.Forms, FMX.Edit, FMX.ListBox, FMX.StdCtrls, FMX.DateTimeCtrls,
+      FMX.Types, FMX.Forms, FMX.Edit, FMX.ListBox, FMX.StdCtrls, FMX.DateTimeCtrls,
     {$ELSE}
       Vcl.Forms, VCL.StdCtrls, Vcl.ExtCtrls,
     {$ENDIF}
@@ -105,7 +104,6 @@ Type
   TSimpleRTTI<T : class, constructor> = class(TInterfacedObject, iSimpleRTTI<T>)
     private
       FInstance : T;
-      function __findRTTIField(ctxRtti : TRttiContext; classe: TClass; const Field: String): TRttiField;
       function __FloatFormat( aValue : String ) : Currency;
       {$IFNDEF CONSOLE}
       function __BindValueToComponent( aComponent : TComponent; aValue : Variant) : iSimpleRTTI<T>;
@@ -146,8 +144,10 @@ uses
 
 
   {$IFNDEF CONSOLE}
-  Vcl.ComCtrls,
-  Vcl.Graphics,
+    {$IFNDEF FMX}
+      Vcl.ComCtrls,
+      Vcl.Graphics,
+    {$ENDIF}
   {$ENDIF}
   Variants,
   SimpleRTTIHelper,
@@ -193,8 +193,11 @@ begin
   {$ENDIF}
 
   if aComponent is TTrackBar then
-    (aComponent as TTrackBar).Position := aValue;
-
+    {$IFDEF VCL}
+      (aComponent as TTrackBar).Position := aValue;
+    {$ELSEIF IFDEF FMX}
+      (aComponent as TTrackBar).Position.X := aValue;
+    {$ENDIF}
 
 
 
@@ -223,27 +226,16 @@ begin
     tkString, tkWChar, tkLString, tkWString, tkVariant, tkUString:
       aProperty.SetValue(Pointer(aEntity), aValue);
     tkArray: ;
-    tkRecord: ;
     tkInterface: ;
     tkInt64: aProperty.SetValue(Pointer(aEntity), aValue.Cast<Int64>);
     tkDynArray: ;
     tkClassRef: ;
     tkPointer: ;
     tkProcedure: ;
-    tkMRecord: ;
     else
       aProperty.SetValue(Pointer(aEntity), aValue);
   end;
 
-end;
-
-function TSimpleRTTI<T>.__findRTTIField(ctxRtti: TRttiContext; classe: TClass;
-  const Field: String): TRttiField;
-var
-  typRtti : TRttiType;
-begin
-  typRtti := ctxRtti.GetType(classe.ClassInfo);
-  Result  := typRtti.GetField(Field);
 end;
 
 function TSimpleRTTI<T>.__FloatFormat( aValue : String ) : Currency;
@@ -282,7 +274,11 @@ begin
 
 
   if aComponent is TTrackBar then
-    Result := TValue.FromVariant((aComponent as TTrackBar).Position);
+    {$IFDEF VCL}
+      Result := TValue.FromVariant((aComponent as TTrackBar).Position);
+    {$ELSEIF IFDEF FMX}
+      Result := TValue.FromVariant((aComponent as TTrackBar).Position.X);
+    {$ENDIF}
 
   {$IFDEF VCL}
   if aComponent is TDateTimePicker then
@@ -436,14 +432,14 @@ begin
                 tkInteger, tkInt64:
                   Value := Field.AsInteger;
                 tkChar: ;
-                tkEnumeration: ;
+                tkEnumeration:
+                  Value := Field.AsBoolean;
                 tkFloat: Value := Field.AsFloat;
                 tkSet: ;
                 tkClass: ;
                 tkMethod: ;
                 tkVariant: ;
                 tkArray: ;
-                tkRecord: ;
                 tkInterface: ;
                 tkDynArray: ;
                 tkClassRef: ;
@@ -495,7 +491,8 @@ begin
               tkInteger, tkInt64:
                 Value := Field.AsInteger;
               tkChar: ;
-              tkEnumeration: ;
+              tkEnumeration:
+                Value := Field.AsBoolean;
               tkFloat:
                 Value := Field.AsFloat;
               tkSet: ;
@@ -503,7 +500,6 @@ begin
               tkMethod: ;
               tkVariant: ;
               tkArray: ;
-              tkRecord: ;
               tkInterface: ;
               tkDynArray: ;
               tkClassRef: ;
@@ -547,6 +543,8 @@ begin
         Continue;
 
       case prpRtti.PropertyType.TypeKind of
+        tkEnumeration:
+          aDictionary.Add(prpRtti.FieldName, prpRtti.GetValue(Pointer(FInstance)).AsBoolean);
         tkInteger, tkInt64:
           begin
             if prpRtti.EhChaveEstrangeira then

@@ -67,5 +67,5 @@ __recovery/
 
 *.bin
 
-# Boss
+# Boss dependency manager vendor folder https://github.com/HashLoad/boss
 modules/
